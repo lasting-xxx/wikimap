@@ -15,6 +15,17 @@ import android.view.Window;
 
 import android.support.v4.app.FragmentActivity;
 
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.SupportMapFragment;
+
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 
 
 /**
@@ -52,22 +63,79 @@ public class FullscreenActivity extends FragmentActivity {
 	 */
 	private SystemUiHider mSystemUiHider;
 
+	private GoogleMap mMap = null;
+	private static final String TAG_MAP_FRAGMENT = "MAP_FRAGMENT";
+	private SupportMapFragment mMapFragment;
+	private static final LatLng TOKYO = new LatLng(35.664601, 139.711686);
+	
+	
+	/**
+     * カメラを東京駅に移動する
+     * 
+     * @param isAnimation
+     *            アニメーション移動するかの判定。true でアニメーション移動。
+     */
+    private void moveCameraToTokyo(boolean isAnimation) {
+        // カメラの位置情報を作成する
+        CameraUpdate camera = CameraUpdateFactory
+                .newCameraPosition(new CameraPosition.Builder()
+                        .target(TOKYO)
+                        .zoom(18.0f).build());
+        if (isAnimation) {
+            // アニメーション移動する
+            mMap.animateCamera(camera);
+        } else {
+            // 瞬間移動する
+            mMap.moveCamera(camera);
+        }
+    }
+	
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		// MapFragment から GoogleMap を取得する
+		mMap = mMapFragment.getMap();
+		if (mMap != null) { 
+			// 現在地表示ボタンを有効にする
+			mMap.setMyLocationEnabled(true);
+			
+
+            // 東京駅にマーカーをつける
+            mMap.addMarker(new MarkerOptions()
+                    .position(TOKYO)
+                    .title("株式会社GOGA")
+                    .snippet("はっくなう")
+                    .icon(BitmapDescriptorFactory
+                            .defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
+
+            // カメラの位置を東京駅に変える
+            this.moveCameraToTokyo(true);
+			
+			
+		}
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
-		LocationManager locationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
-		
-		//GPSから現在地の情報を取得
-		Location myLocate = locationManager.getLastKnownLocation("gps");
-		System.out.println(myLocate);
-		
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 		setContentView(R.layout.activity_fullscreen);
 
 		final View controlsView = findViewById(R.id.fullscreen_content_controls);
 		final View contentView = findViewById(R.id.map);
+		
+		
+		mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentByTag(TAG_MAP_FRAGMENT);
+		if (mMapFragment == null) {
+			// MapFragment がなければ作成する
+			mMapFragment = SupportMapFragment.newInstance();
+			getSupportFragmentManager().beginTransaction()
+			.add(android.R.id.content, mMapFragment, TAG_MAP_FRAGMENT)
+			.commit();
+		}
+		
 
 		// Set up an instance of SystemUiHider to control the system UI for
 		// this activity.
@@ -169,11 +237,5 @@ public class FullscreenActivity extends FragmentActivity {
 	private void delayedHide(int delayMillis) {
 		mHideHandler.removeCallbacks(mHideRunnable);
 		mHideHandler.postDelayed(mHideRunnable, delayMillis);
-	}
-	
-	
-	@Override
-    public void onResume() {
-		super.onResume();
 	}
 }
