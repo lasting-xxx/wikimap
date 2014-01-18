@@ -3,6 +3,7 @@
 
     <string name="app_name">Map</string>
     <string name="search_button">Search</string>
+    <string name="input_here">input here</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
 
 </resources>
